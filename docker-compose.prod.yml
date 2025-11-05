@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  bolt-ai-prod:
+    image: ghcr.io/sergeevgit1/bolt.diy:latest
+    ports:
+      - '5173:5173'
+    env_file:
+      - '.env'
+    environment:
+      - NODE_ENV=production
+      - PORT=5173
+      - VITE_LOG_LEVEL=${VITE_LOG_LEVEL:-debug}
+      - DEFAULT_NUM_CTX=${DEFAULT_NUM_CTX:-32768}
+      - RUNNING_IN_DOCKER=true
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    # В оригинальном Dockerfile уже есть CMD [pnpm, run, dockerstart],
+    # который запускает приложение через Wrangler.
+    # Если вы хотите, чтобы Wrangler устанавливался в docker-compose,
+    # то это будет выглядеть так (но это замедлит запуск):
+    # command: >
+    #   sh -c "
+    #     npm install -g wrangler@latest &&
+    #     pnpm run dockerstart
+    #   "
+    command: [pnpm, run, dockerstart]
