@@ -41,7 +41,7 @@ function ProviderCard({
 
   return (
     <Card className="bg-bolt-elements-background-depth-2 hover:bg-bolt-elements-background-depth-3 transition-all duration-300 shadow-sm hover:shadow-md border border-bolt-elements-borderColor hover:border-purple-500/30">
-      <CardContent className="p-6">
+      <CardContent className="p-6 pt-8">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4 flex-1">
             <div
