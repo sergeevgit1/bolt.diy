@@ -331,7 +331,41 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
    */
   private async _checkOpenAILikeHealth(baseUrl: string, signal: AbortSignal): Promise<HealthCheckResult> {
     try {
-      // Normalize URL to include /v1 if needed
+      // Если нам передали конкретный health endpoint, используем его
+      const isHealthEndpoint = /health/i.test(baseUrl);
+
+      if (isHealthEndpoint) {
+        const response = await fetch(baseUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // Пытаемся прочитать версию из ответа, если это JSON
+        let version: string | undefined;
+        try {
+          const data = await response.json();
+          if (typeof data === 'object' && data && 'version' in data) {
+            version = String((data as any).version);
+          }
+        } catch {
+          // Ответ может быть не JSON — просто считаем здоровым
+        }
+
+        return {
+          isHealthy: true,
+          responseTime: 0,
+          version,
+        };
+      }
+
+      // Иначе выполняем стандартную проверку через /v1/models
       const normalizedUrl = baseUrl.includes('/v1') ? baseUrl : `${baseUrl}/v1`;
 
       const response = await fetch(`${normalizedUrl}/models`, {
