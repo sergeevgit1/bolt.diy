@@ -34,9 +34,11 @@ export default class OpenAILikeProvider extends BaseProvider {
 
     try {
       const response = await fetch(`${baseUrl}/models`, {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-        },
+        headers: apiKey
+          ? {
+              Authorization: `Bearer ${apiKey}`,
+            }
+          : undefined,
       });
 
       if (!response.ok) {
