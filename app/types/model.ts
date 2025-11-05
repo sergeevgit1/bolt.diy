@@ -18,6 +18,8 @@ export interface IProviderSetting {
   enabled?: boolean;
   baseUrl?: string;
   OPENAI_LIKE_API_MODELS?: string;
+  apiKey?: string;
+  healthEndpoint?: string;
 }
 
 export type IProviderConfig = ProviderInfo & {

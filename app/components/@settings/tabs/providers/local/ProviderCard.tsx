@@ -11,6 +11,8 @@ interface ProviderCardProps {
   provider: IProviderConfig;
   onToggle: (enabled: boolean) => void;
   onUpdateBaseUrl: (url: string) => void;
+  onUpdateApiKey?: (key: string) => void;
+  onUpdateHealthEndpoint?: (url: string) => void;
   isEditing: boolean;
   onStartEditing: () => void;
   onStopEditing: () => void;
@@ -20,6 +22,8 @@ function ProviderCard({
   provider,
   onToggle,
   onUpdateBaseUrl,
+  onUpdateApiKey,
+  onUpdateHealthEndpoint,
   isEditing,
   onStartEditing,
   onStopEditing,
@@ -101,6 +105,32 @@ function ProviderCard({
                         <span className="font-mono">{provider.settings.baseUrl || 'Click to set base URL'}</span>
                       </div>
                     </button>
+                  )}
+
+                  {provider.name === 'OpenAILike' && (
+                    <div className="mt-4 space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-bolt-elements-textPrimary">API Key</label>
+                        <input
+                          type="password"
+                          defaultValue={provider.settings.apiKey}
+                          placeholder="Введите API ключ"
+                          className="w-full px-4 py-3 rounded-lg text-sm bg-bolt-elements-background-depth-4 border border-purple-500/30 text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200 shadow-sm"
+                          onBlur={(e) => onUpdateApiKey?.(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-bolt-elements-textPrimary">Health endpoint</label>
+                        <input
+                          type="text"
+                          defaultValue={provider.settings.healthEndpoint}
+                          placeholder="Например: /health или /v1/models"
+                          className="w-full px-4 py-3 rounded-lg text-sm bg-bolt-elements-background-depth-4 border border-purple-500/30 text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200 shadow-sm"
+                          onBlur={(e) => onUpdateHealthEndpoint?.(e.target.value)}
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

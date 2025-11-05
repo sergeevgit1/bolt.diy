@@ -82,12 +82,16 @@ export default function LocalProvidersTab() {
     filteredProviders.forEach((provider) => {
       const baseUrl = provider.settings.baseUrl;
 
-      if (provider.settings.enabled && baseUrl) {
-        console.log(`[LocalProvidersTab] Starting monitoring for ${provider.name} at ${baseUrl}`);
-        startMonitoring(provider.name as 'Ollama' | 'LMStudio' | 'OpenAILike', baseUrl);
-      } else if (!provider.settings.enabled && baseUrl) {
-        console.log(`[LocalProvidersTab] Stopping monitoring for ${provider.name} at ${baseUrl}`);
-        stopMonitoring(provider.name as 'Ollama' | 'LMStudio' | 'OpenAILike', baseUrl);
+      // Для OpenAILike учитываем настраиваемый healthEndpoint, если задан
+      const monitorUrl =
+        provider.name === 'OpenAILike' && provider.settings.healthEndpoint ? provider.settings.healthEndpoint : baseUrl;
+
+      if (provider.settings.enabled && monitorUrl) {
+        console.log(`[LocalProvidersTab] Starting monitoring for ${provider.name} at ${monitorUrl}`);
+        startMonitoring(provider.name as 'Ollama' | 'LMStudio' | 'OpenAILike', monitorUrl);
+      } else if (!provider.settings.enabled && monitorUrl) {
+        console.log(`[LocalProvidersTab] Stopping monitoring for ${provider.name} at ${monitorUrl}`);
+        stopMonitoring(provider.name as 'Ollama' | 'LMStudio' | 'OpenAILike', monitorUrl);
       }
     });
   }, [filteredProviders, startMonitoring, stopMonitoring]);
@@ -186,6 +190,28 @@ export default function LocalProvidersTab() {
         baseUrl: newBaseUrl,
       });
       toast(`${provider.name} base URL updated`);
+    },
+    [updateProviderSettings, toast],
+  );
+
+  const handleUpdateApiKey = useCallback(
+    (provider: IProviderConfig, newApiKey: string) => {
+      updateProviderSettings(provider.name, {
+        ...provider.settings,
+        apiKey: newApiKey,
+      });
+      toast(`${provider.name} API ключ обновлён`);
+    },
+    [updateProviderSettings, toast],
+  );
+
+  const handleUpdateHealthEndpoint = useCallback(
+    (provider: IProviderConfig, newHealth: string) => {
+      updateProviderSettings(provider.name, {
+        ...provider.settings,
+        healthEndpoint: newHealth,
+      });
+      toast(`${provider.name} health endpoint обновлён`);
     },
     [updateProviderSettings, toast],
   );
@@ -353,6 +379,8 @@ export default function LocalProvidersTab() {
                 provider={provider}
                 onToggle={(enabled) => handleToggleProvider(provider, enabled)}
                 onUpdateBaseUrl={(url) => handleUpdateBaseUrl(provider, url)}
+                onUpdateApiKey={(key) => handleUpdateApiKey(provider, key)}
+                onUpdateHealthEndpoint={(url) => handleUpdateHealthEndpoint(provider, url)}
                 isEditing={editingProvider === provider.name}
                 onStartEditing={() => setEditingProvider(provider.name)}
                 onStopEditing={() => setEditingProvider(null)}
