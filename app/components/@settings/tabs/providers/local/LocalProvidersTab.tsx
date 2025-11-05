@@ -143,7 +143,7 @@ export default function LocalProvidersTab() {
     }
   };
 
-  const fetchLMStudioModels = async (baseUrl: string) => {
+  const fetchLMStudioModels = async (_baseUrl: string) => {
     try {
       setIsLoadingLMStudioModels(true);
 

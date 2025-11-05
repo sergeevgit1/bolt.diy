@@ -26,6 +26,7 @@ export abstract class BaseProvider implements ProviderInfo {
   }) {
     const { apiKeys, providerSettings, serverEnv, defaultBaseUrlKey, defaultApiTokenKey } = options;
     let settingsBaseUrl = providerSettings?.baseUrl;
+    const settingsApiKey = providerSettings?.apiKey;
     const manager = LLMManager.getInstance();
 
     if (settingsBaseUrl && settingsBaseUrl.length == 0) {
@@ -46,7 +47,11 @@ export abstract class BaseProvider implements ProviderInfo {
 
     const apiTokenKey = this.config.apiTokenKey || defaultApiTokenKey;
     const apiKey =
-      apiKeys?.[this.name] || serverEnv?.[apiTokenKey] || process?.env?.[apiTokenKey] || manager.env?.[apiTokenKey];
+      settingsApiKey ||
+      apiKeys?.[this.name] ||
+      serverEnv?.[apiTokenKey] ||
+      process?.env?.[apiTokenKey] ||
+      manager.env?.[apiTokenKey];
 
     return {
       baseUrl,

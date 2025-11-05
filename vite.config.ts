@@ -16,6 +16,11 @@ export default defineConfig((config) => {
     server: {
       port: 5174,
     },
+    resolve: {
+      alias: {
+        path: 'path-browserify',
+      },
+    },
     define: {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     },
@@ -31,7 +36,7 @@ export default defineConfig((config) => {
           global: true,
         },
         protocolImports: true,
-        exclude: ['child_process', 'fs', 'path'],
+        exclude: ['child_process', 'fs'],
       }),
       {
         name: 'buffer-polyfill',

@@ -344,7 +344,7 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
   private async _checkOpenAILikeHealth(
     baseUrl: string,
     signal: AbortSignal,
-    apiKey?: string,
+    _apiKey?: string,
   ): Promise<HealthCheckResult> {
     try {
       // Используем серверный прокси, чтобы избежать CORS и корректно пробросить токены из cookie
@@ -357,14 +357,14 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
       if (response.ok) {
         const data = (await response.json()) as { modelList?: Array<{ name?: string }> } | undefined;
         const availableModels = Array.isArray(data?.modelList)
-          ? (data!.modelList as Array<{ name?: string }>)
-              .map((m) => m?.name)
-              .filter((id): id is string => Boolean(id))
+          ? (data!.modelList as Array<{ name?: string }>).map((m) => m?.name).filter((id): id is string => Boolean(id))
           : [];
+
         return { isHealthy: true, responseTime: 0, availableModels };
       }
 
       const errorText = await response.text();
+
       return {
         isHealthy: false,
         responseTime: 0,
@@ -386,8 +386,10 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
   private _buildModelsUrl(input: string): string {
     try {
       const u = new URL(input);
+
       // Удаляем хвост "/health" и возможные параметры после него
       let p = u.pathname.replace(/\/?health.*$/i, '');
+
       // Удаляем лишние завершающие слэши
       p = p.replace(/\/$/, '');
 
@@ -398,11 +400,16 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
 
       // Иначе добавляем /models к текущему пути
       const prefix = p === '/' || p === '' ? '' : p;
+
       return `${u.origin}${prefix}/models`;
     } catch {
       // Фолбэк для некорректных/относительных значений: пытаемся нормализовать строкой
-      let s = input.replace(/\/?health.*$/i, '').replace(/\/$/, '');
-      if (/\/models\/?$/.test(s)) return s;
+      const s = input.replace(/\/?health.*$/i, '').replace(/\/$/, '');
+
+      if (/\/models\/?$/.test(s)) {
+        return s;
+      }
+
       return `${s}/models`;
     }
   }
