@@ -44,38 +44,39 @@ function StatusDashboard({ onBack }: { onBack: () => void }) {
           {healthStatuses.map((status) => (
             <Card key={`${status.provider}-${status.baseUrl}`} className="bg-bolt-elements-background-depth-2">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-bolt-elements-background-depth-3 flex items-center justify-center">
-                      {React.createElement(PROVIDER_ICONS[status.provider as keyof typeof PROVIDER_ICONS] || Server, {
-                        className: 'w-5 h-5 text-bolt-elements-textPrimary',
-                      })}
+                <div className="min-h-[96px] flex items-center">
+                  <div className="grid grid-cols-5 gap-6 text-sm w-full">
+                    <div className="space-y-1">
+                      <div className="text-bolt-elements-textSecondary">Название провайдера</div>
+                      <div className="text-lg font-semibold text-bolt-elements-textPrimary">{status.provider}</div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-bolt-elements-textPrimary">{status.provider}</h3>
-                      <p className="text-xs text-bolt-elements-textSecondary font-mono">{status.baseUrl}</p>
-                    </div>
-                  </div>
-                  <HealthStatusBadge status={status.status} responseTime={status.responseTime} />
-                </div>
 
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div className="text-center">
-                    <div className="text-bolt-elements-textSecondary">Models</div>
-                    <div className="text-lg font-semibold text-bolt-elements-textPrimary">
-                      {status.availableModels?.length || 0}
+                    <div className="space-y-1">
+                      <div className="text-bolt-elements-textSecondary">Количество моделей</div>
+                      <div className="text-lg font-semibold text-bolt-elements-textPrimary">
+                        {status.availableModels?.length || 0}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-bolt-elements-textSecondary">Version</div>
-                    <div className="text-lg font-semibold text-bolt-elements-textPrimary">
-                      {status.version || 'Unknown'}
+
+                    <div className="space-y-1">
+                      <div className="text-bolt-elements-textSecondary">Версия</div>
+                      <div className="text-lg font-semibold text-bolt-elements-textPrimary">
+                        {status.version || 'Неизвестно'}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-bolt-elements-textSecondary">Last Check</div>
-                    <div className="text-lg font-semibold text-bolt-elements-textPrimary">
-                      {status.lastChecked ? new Date(status.lastChecked).toLocaleTimeString() : 'Never'}
+
+                    <div className="space-y-1">
+                      <div className="text-bolt-elements-textSecondary">Последняя проверка</div>
+                      <div className="text-lg font-semibold text-bolt-elements-textPrimary">
+                        {status.lastChecked ? new Date(status.lastChecked).toLocaleTimeString() : 'Никогда'}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-bolt-elements-textSecondary">Статус</div>
+                      <div className="mt-1">
+                        <HealthStatusBadge status={status.status} responseTime={status.responseTime} />
+                      </div>
                     </div>
                   </div>
                 </div>
