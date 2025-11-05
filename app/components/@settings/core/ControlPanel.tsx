@@ -9,7 +9,7 @@ import { useConnectionStatus } from '~/lib/hooks/useConnectionStatus';
 import { tabConfigurationStore, resetTabConfiguration } from '~/lib/stores/settings';
 import { profileStore } from '~/lib/stores/profile';
 import type { TabType, Profile } from './types';
-import { TAB_LABELS, DEFAULT_TAB_CONFIG, TAB_DESCRIPTIONS } from './constants';
+import { DEFAULT_TAB_CONFIG, useTabLabels, useTabDescriptions } from './constants';
 import { DialogTitle } from '~/components/ui/Dialog';
 import { AvatarDropdown } from './AvatarDropdown';
 import BackgroundRays from '~/components/ui/BackgroundRays';
@@ -58,6 +58,11 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
   const { hasNewFeatures, unviewedFeatures, acknowledgeAllFeatures } = useFeatures();
   const { hasUnreadNotifications, unreadNotifications, markAllAsRead } = useNotifications();
   const { hasConnectionIssues, currentIssue, acknowledgeIssue } = useConnectionStatus();
+
+  // i18n hooks
+  const { t } = useTranslation();
+  const tabLabels = useTabLabels();
+  const tabDescriptions = useTabDescriptions();
 
   // Memoize the base tab configurations to avoid recalculation
   const baseTabConfig = useMemo(() => {
@@ -261,7 +266,7 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
                       </button>
                     )}
                     <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">
-                      {showTabManagement ? 'Tab Management' : activeTab ? TAB_LABELS[activeTab] : 'Control Panel'}
+                      {showTabManagement ? t('tabManagement') : activeTab ? tabLabels[activeTab] : t('controlPanel')}
                     </DialogTitle>
                   </div>
 
@@ -323,7 +328,7 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
                               isActive={activeTab === tab.id}
                               hasUpdate={getTabUpdateStatus(tab.id)}
                               statusMessage={getStatusMessage(tab.id)}
-                              description={TAB_DESCRIPTIONS[tab.id]}
+                              description={tabDescriptions[tab.id]}
                               isLoading={loadingTab === tab.id}
                               className="h-full relative"
                             >

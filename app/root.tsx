@@ -1,6 +1,13 @@
 import { useStore } from '@nanostores/react';
 import type { LinksFunction } from '@remix-run/cloudflare';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from '@remix-run/react';
+import { useTranslation } from 'react-i18next';
+import { i18n } from './i18n/i18n.server';
+import type { LoaderFunctionArgs } from '@remix-run/cloudflare';
+import { json } from '@remix-run/cloudflare';
+import { getEnv } from './lib/api/env';
+import { getTheme } from './lib/api/theme';
+import { getIsWebContainer } from './lib/api/webcontainer';
 import tailwindReset from '@unocss/reset/tailwind-compat.css?url';
 import { themeStore } from './lib/stores/theme';
 import { stripIndents } from './utils/stripIndent';
@@ -61,15 +68,31 @@ const inlineThemeCode = stripIndents`
   }
 `;
 
-export const Head = createHead(() => (
-  <>
-    <meta charSet="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <Meta />
-    <Links />
-    <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
-  </>
-));
+export async function loader({ request }: LoaderFunctionArgs) {
+  const env = getEnv(request);
+  const theme = await getTheme(request);
+  const isWebContainer = getIsWebContainer(request);
+  const locale = await i18n.getLocale(request);
+
+  return json({ env, theme, isWebContainer, locale });
+}
+
+export const Head = createHead(() => {
+  const { locale } = useLoaderData<typeof loader>();
+  const { i18n } = useTranslation();
+
+  return (
+    <>
+      <meta charSet="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <Meta />
+      <Links />
+      <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
+      <meta name="i18next-lng" content={locale} />
+      <meta name="i18next-ns" content="common" />
+    </>
+  );
+});
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const theme = useStore(themeStore);
@@ -115,7 +138,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 import { logStore } from './lib/stores/logs';
 
 export default function App() {
+  const { locale } = useLoaderData<typeof loader>();
+  const { i18n } = useTranslation();
   const theme = useStore(themeStore);
+
+  useEffect(() => {
+    i18n.changeLanguage(locale);
+  }, [locale, i18n]);
 
   useEffect(() => {
     logStore.logSystem('Application initialized', {

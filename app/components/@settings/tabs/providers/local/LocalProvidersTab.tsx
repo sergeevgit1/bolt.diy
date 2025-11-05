@@ -9,6 +9,7 @@ import { logStore } from '~/lib/stores/logs';
 import { providerBaseUrlEnvKeys } from '~/utils/constants';
 import { useToast } from '~/components/ui/use-toast';
 import { useLocalModelHealth } from '~/lib/hooks/useLocalModelHealth';
+import { useTranslation } from 'react-i18next';
 import ErrorBoundary from './ErrorBoundary';
 import { ModelCardSkeleton } from './LoadingSkeleton';
 import SetupGuide from './SetupGuide';
@@ -176,7 +177,9 @@ export default function LocalProvidersTab() {
       filteredProviders.forEach((provider) => {
         updateProviderSettings(provider.name, { ...provider.settings, enabled });
       });
-      toast(enabled ? 'All local providers enabled' : 'All local providers disabled');
+      toast({
+        title: enabled ? t('toast.allLocalProvidersEnabled') : t('toast.allLocalProvidersDisabled'),
+      });
     },
     [filteredProviders, updateProviderSettings, toast],
   );
@@ -191,7 +194,12 @@ export default function LocalProvidersTab() {
       logStore.logProvider(`Provider ${provider.name} ${enabled ? 'enabled' : 'disabled'}`, {
         provider: provider.name,
       });
-      toast(`${provider.name} ${enabled ? 'enabled' : 'disabled'}`);
+	      toast({
+        title: t('toast.providerStatus', {
+          providerName: provider.name,
+          status: enabled ? t('enabled') : t('disabled'),
+        }),
+      });
     },
     [updateProviderSettings, toast],
   );
@@ -202,7 +210,9 @@ export default function LocalProvidersTab() {
         ...provider.settings,
         baseUrl: newBaseUrl,
       });
-      toast(`${provider.name} base URL updated`);
+	      toast({
+        title: t('toast.baseUrlUpdated', { providerName: provider.name }),
+      });
     },
     [updateProviderSettings, toast],
   );
@@ -213,7 +223,9 @@ export default function LocalProvidersTab() {
         ...provider.settings,
         apiKey: newApiKey,
       });
-      toast(`${provider.name} API ключ обновлён`);
+	      toast({
+        title: t('toast.apiKeyUpdated', { providerName: provider.name }),
+      });
     },
     [updateProviderSettings, toast],
   );
@@ -224,7 +236,9 @@ export default function LocalProvidersTab() {
         ...provider.settings,
         healthEndpoint: newHealth,
       });
-      toast(`${provider.name} health endpoint обновлён`);
+	      toast({
+        title: t('toast.healthEndpointUpdated', { providerName: provider.name }),
+      });
     },
     [updateProviderSettings, toast],
   );

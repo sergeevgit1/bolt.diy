@@ -1,4 +1,6 @@
 import type { AppLoadContext } from '@remix-run/cloudflare';
+import { RemixI18NextProvider } from 'remix-i18next';
+import { i18n } from './i18n/i18n.server';
 import { RemixServer } from '@remix-run/react';
 import { isbot } from 'isbot';
 import { renderToReadableStream } from 'react-dom/server';
@@ -15,7 +17,14 @@ export default async function handleRequest(
 ) {
   // await initializeModelList({});
 
-  const readable = await renderToReadableStream(<RemixServer context={remixContext} url={request.url} />, {
+  const instance = await i18n.getI18n();
+  const lng = await i18n.getLocale(request);
+
+  const readable = await renderToReadableStream(
+    <RemixI18NextProvider i18n={instance} locale={lng}>
+      <RemixServer context={remixContext} url={request.url} />
+    </RemixI18NextProvider>,
+    {
     signal: request.signal,
     onError(error: unknown) {
       console.error(error);
@@ -30,7 +39,7 @@ export default async function handleRequest(
       controller.enqueue(
         new Uint8Array(
           new TextEncoder().encode(
-            `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head>${head}</head><body><div id="root" class="w-full h-full">`,
+            `<!DOCTYPE html><html lang="${lng}" data-theme="${themeStore.value}"><head>${head}</head><body><div id="root" class="w-full h-full">`,
           ),
         ),
       );

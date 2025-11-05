@@ -1,4 +1,5 @@
 import type { TabType } from './types';
+import { useTranslation } from 'react-i18next';
 import { User, Settings, Bell, Star, Database, Cloud, Laptop, Github, Wrench, List } from 'lucide-react';
 
 // GitLab icon component
@@ -72,6 +73,27 @@ export const TAB_LABELS: Record<TabType, string> = {
   mcp: 'MCP Servers',
 };
 
+export function useTabLabels() {
+  const { t } = useTranslation();
+
+  return {
+    profile: t('profile'),
+    settings: t('settings'),
+    notifications: t('notifications'),
+    features: t('features'),
+    data: t('data'),
+    'cloud-providers': t('cloudProviders'),
+    'local-providers': t('localProviders'),
+    github: t('github'),
+    gitlab: t('gitlab'),
+    netlify: t('netlify'),
+    vercel: t('vercel'),
+    supabase: t('supabase'),
+    'event-logs': t('eventLogs'),
+    mcp: t('mcpServers'),
+  };
+}
+
 export const TAB_DESCRIPTIONS: Record<TabType, string> = {
   profile: 'Manage your profile and account settings',
   settings: 'Configure application preferences',
@@ -88,6 +110,27 @@ export const TAB_DESCRIPTIONS: Record<TabType, string> = {
   'event-logs': 'View system events and logs',
   mcp: 'Configure MCP (Model Context Protocol) servers',
 };
+
+export function useTabDescriptions() {
+  const { t } = useTranslation();
+
+  return {
+    profile: t('profileDescription'),
+    settings: t('settingsDescription'),
+    notifications: t('notificationsDescription'),
+    features: t('featuresDescription'),
+    data: t('dataDescription'),
+    'cloud-providers': t('cloudProvidersDescription'),
+    'local-providers': t('localProvidersDescription'),
+    github: t('githubDescription'),
+    gitlab: t('gitlabDescription'),
+    netlify: t('netlifyDescription'),
+    vercel: t('vercelDescription'),
+    supabase: t('supabaseDescription'),
+    'event-logs': t('eventLogsDescription'),
+    mcp: t('mcpServersDescription'),
+  };
+}
 
 export const DEFAULT_TAB_CONFIG = [
   // User Window Tabs (Always visible by default)
