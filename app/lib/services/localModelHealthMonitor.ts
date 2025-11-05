@@ -53,6 +53,7 @@ export interface HealthCheckResult {
 export class LocalModelHealthMonitor extends SimpleEventEmitter {
   private _healthStatuses = new Map<string, ModelHealthStatus>();
   private _checkIntervals = new Map<string, NodeJS.Timeout>();
+  private _providerAuth = new Map<string, { apiKey?: string }>();
   private readonly _defaultCheckInterval = 30000; // 30 seconds
   private readonly _healthCheckTimeout = 10000; // 10 seconds
 
@@ -63,7 +64,12 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
   /**
    * Start monitoring a local provider
    */
-  startMonitoring(provider: 'Ollama' | 'LMStudio' | 'OpenAILike', baseUrl: string, checkInterval?: number): void {
+  startMonitoring(
+    provider: 'Ollama' | 'LMStudio' | 'OpenAILike',
+    baseUrl: string,
+    checkInterval?: number,
+    apiKey?: string,
+  ): void {
     const key = this._getProviderKey(provider, baseUrl);
 
     // Stop existing monitoring if any
@@ -84,6 +90,9 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
 
     this._checkIntervals.set(key, interval);
 
+    // Store auth config if provided
+    this._providerAuth.set(key, { apiKey });
+
     // Perform initial health check
     this.performHealthCheck(provider, baseUrl);
   }
@@ -102,6 +111,7 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
     }
 
     this._healthStatuses.delete(key);
+    this._providerAuth.delete(key);
   }
 
   /**
@@ -127,6 +137,7 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
     baseUrl: string,
   ): Promise<HealthCheckResult> {
     const key = this._getProviderKey(provider, baseUrl);
+    const auth = this._providerAuth.get(key);
     const startTime = Date.now();
 
     // Update status to checking
@@ -139,7 +150,7 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
     }
 
     try {
-      const result = await this._checkProviderHealth(provider, baseUrl);
+      const result = await this._checkProviderHealth(provider, baseUrl, auth?.apiKey);
       const responseTime = Date.now() - startTime;
 
       // Update health status
@@ -194,6 +205,7 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
   private async _checkProviderHealth(
     provider: 'Ollama' | 'LMStudio' | 'OpenAILike',
     baseUrl: string,
+    apiKey?: string,
   ): Promise<HealthCheckResult> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this._healthCheckTimeout);
@@ -205,7 +217,7 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
         case 'LMStudio':
           return await this._checkLMStudioHealth(baseUrl, controller.signal);
         case 'OpenAILike':
-          return await this._checkOpenAILikeHealth(baseUrl, controller.signal);
+          return await this._checkOpenAILikeHealth(baseUrl, controller.signal, apiKey);
         default:
           throw new Error(`Unsupported provider: ${provider}`);
       }
@@ -329,64 +341,34 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
   /**
    * Check OpenAI-like provider health
    */
-  private async _checkOpenAILikeHealth(baseUrl: string, signal: AbortSignal): Promise<HealthCheckResult> {
+  private async _checkOpenAILikeHealth(
+    baseUrl: string,
+    signal: AbortSignal,
+    apiKey?: string,
+  ): Promise<HealthCheckResult> {
     try {
-      // Если нам передали конкретный health endpoint, используем его
-      const isHealthEndpoint = /health/i.test(baseUrl);
-
-      if (isHealthEndpoint) {
-        const response = await fetch(baseUrl, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        // Пытаемся прочитать версию из ответа, если это JSON
-        let version: string | undefined;
-        try {
-          const data = await response.json();
-          if (typeof data === 'object' && data && 'version' in data) {
-            version = String((data as any).version);
-          }
-        } catch {
-          // Ответ может быть не JSON — просто считаем здоровым
-        }
-
-        return {
-          isHealthy: true,
-          responseTime: 0,
-          version,
-        };
-      }
-
-      // Иначе выполняем стандартную проверку через /v1/models
-      const normalizedUrl = baseUrl.includes('/v1') ? baseUrl : `${baseUrl}/v1`;
-
-      const response = await fetch(`${normalizedUrl}/models`, {
+      // Используем серверный прокси, чтобы избежать CORS и корректно пробросить токены из cookie
+      const response = await fetch('/api/models/OpenAILike', {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         signal,
+        credentials: 'same-origin',
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (response.ok) {
+        const data = (await response.json()) as { modelList?: Array<{ name?: string }> } | undefined;
+        const availableModels = Array.isArray(data?.modelList)
+          ? (data!.modelList as Array<{ name?: string }>)
+              .map((m) => m?.name)
+              .filter((id): id is string => Boolean(id))
+          : [];
+        return { isHealthy: true, responseTime: 0, availableModels };
       }
 
-      const data = (await response.json()) as { data?: Array<{ id: string }> };
-      const models = data.data?.map((model) => model.id) || [];
-
+      const errorText = await response.text();
       return {
-        isHealthy: true,
+        isHealthy: false,
         responseTime: 0,
-        availableModels: models,
+        error: `Server models route returned ${response.status}${errorText ? `: ${errorText}` : ''}`,
       };
     } catch (error) {
       return {
@@ -394,6 +376,34 @@ export class LocalModelHealthMonitor extends SimpleEventEmitter {
         responseTime: 0,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
+    }
+  }
+
+  /**
+   * Построение корректного URL для запроса списка моделей
+   * Принимает любой baseUrl/healthEndpoint и возвращает абсолютный URL к /v1/models.
+   */
+  private _buildModelsUrl(input: string): string {
+    try {
+      const u = new URL(input);
+      // Удаляем хвост "/health" и возможные параметры после него
+      let p = u.pathname.replace(/\/?health.*$/i, '');
+      // Удаляем лишние завершающие слэши
+      p = p.replace(/\/$/, '');
+
+      // Если путь уже заканчивается на /models, используем как есть
+      if (/\/models\/?$/.test(p)) {
+        return `${u.origin}${p}`;
+      }
+
+      // Иначе добавляем /models к текущему пути
+      const prefix = p === '/' || p === '' ? '' : p;
+      return `${u.origin}${prefix}/models`;
+    } catch {
+      // Фолбэк для некорректных/относительных значений: пытаемся нормализовать строкой
+      let s = input.replace(/\/?health.*$/i, '').replace(/\/$/, '');
+      if (/\/models\/?$/.test(s)) return s;
+      return `${s}/models`;
     }
   }
 

@@ -4,12 +4,18 @@ import { localModelHealthMonitor, type ModelHealthStatus } from '~/lib/services/
 export interface UseLocalModelHealthOptions {
   autoStart?: boolean;
   checkInterval?: number;
+  apiKey?: string;
 }
 
 export interface UseLocalModelHealthReturn {
   healthStatuses: ModelHealthStatus[];
   getHealthStatus: (provider: 'Ollama' | 'LMStudio' | 'OpenAILike', baseUrl: string) => ModelHealthStatus | undefined;
-  startMonitoring: (provider: 'Ollama' | 'LMStudio' | 'OpenAILike', baseUrl: string, checkInterval?: number) => void;
+  startMonitoring: (
+    provider: 'Ollama' | 'LMStudio' | 'OpenAILike',
+    baseUrl: string,
+    checkInterval?: number,
+    apiKey?: string,
+  ) => void;
   stopMonitoring: (provider: 'Ollama' | 'LMStudio' | 'OpenAILike', baseUrl: string) => void;
   performHealthCheck: (provider: 'Ollama' | 'LMStudio' | 'OpenAILike', baseUrl: string) => Promise<void>;
   isHealthy: (provider: 'Ollama' | 'LMStudio' | 'OpenAILike', baseUrl: string) => boolean;
@@ -57,9 +63,9 @@ export function useLocalModelHealth(options: UseLocalModelHealthOptions = {}): U
 
   // Start monitoring a provider
   const startMonitoring = useCallback(
-    (provider: 'Ollama' | 'LMStudio' | 'OpenAILike', baseUrl: string, interval?: number) => {
+    (provider: 'Ollama' | 'LMStudio' | 'OpenAILike', baseUrl: string, interval?: number, apiKey?: string) => {
       console.log(`[Health Monitor] Starting monitoring for ${provider} at ${baseUrl}`);
-      localModelHealthMonitor.startMonitoring(provider, baseUrl, interval || checkInterval);
+      localModelHealthMonitor.startMonitoring(provider, baseUrl, interval || checkInterval, apiKey);
     },
     [checkInterval],
   );
@@ -145,7 +151,7 @@ export function useProviderHealth(
   // Auto-start monitoring if enabled
   useEffect(() => {
     if (autoStart && baseUrl) {
-      startMonitoring(provider, baseUrl, checkInterval);
+      startMonitoring(provider, baseUrl, checkInterval, options.apiKey);
 
       return () => {
         stopMonitoring(provider, baseUrl);
@@ -159,7 +165,7 @@ export function useProviderHealth(
     status,
     isHealthy: isHealthy(provider, baseUrl),
     performHealthCheck: () => performHealthCheck(provider, baseUrl),
-    startMonitoring: (interval?: number) => startMonitoring(provider, baseUrl, interval),
+    startMonitoring: (interval?: number) => startMonitoring(provider, baseUrl, interval, options.apiKey),
     stopMonitoring: () => stopMonitoring(provider, baseUrl),
   };
 }

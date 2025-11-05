@@ -88,7 +88,12 @@ export default function LocalProvidersTab() {
 
       if (provider.settings.enabled && monitorUrl) {
         console.log(`[LocalProvidersTab] Starting monitoring for ${provider.name} at ${monitorUrl}`);
-        startMonitoring(provider.name as 'Ollama' | 'LMStudio' | 'OpenAILike', monitorUrl);
+        startMonitoring(
+          provider.name as 'Ollama' | 'LMStudio' | 'OpenAILike',
+          monitorUrl,
+          undefined,
+          provider.settings.apiKey,
+        );
       } else if (!provider.settings.enabled && monitorUrl) {
         console.log(`[LocalProvidersTab] Stopping monitoring for ${provider.name} at ${monitorUrl}`);
         stopMonitoring(provider.name as 'Ollama' | 'LMStudio' | 'OpenAILike', monitorUrl);
@@ -142,14 +147,22 @@ export default function LocalProvidersTab() {
     try {
       setIsLoadingLMStudioModels(true);
 
-      const response = await fetch(`${baseUrl}/v1/models`);
+      // Запрашиваем список моделей через серверный маршрут, чтобы избежать CORS
+      const response = await fetch(`/api/models/LMStudio`, {
+        credentials: 'same-origin',
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch LM Studio models');
       }
 
-      const data = (await response.json()) as { data: LMStudioModel[] };
-      setLMStudioModels(data.data || []);
+      const data = (await response.json()) as { modelList: { name: string }[] };
+      const mapped: LMStudioModel[] = (data.modelList || []).map((m) => ({
+        id: m.name,
+        object: 'model',
+        owned_by: 'LMStudio',
+      }));
+      setLMStudioModels(mapped);
     } catch {
       console.error('Error fetching LM Studio models');
       setLMStudioModels([]);
