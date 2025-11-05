@@ -1,39 +1,35 @@
 {
   "compilerOptions": {
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "types": [
-      "@remix-run/cloudflare",
-      "vite/client",
-      "@cloudflare/workers-types/2023-07-01",
-      "@types/dom-speech-recognition",
-      "electron"
-    ],
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
-    "target": "ESNext",
-    "strict": true,
-    "allowJs": true,
     "skipLibCheck": true,
-    "verbatimModuleSyntax": true,
-    "forceConsistentCasingInFileNames": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./app/*"]
-    },
-    // vite takes care of building everything, not tsc
-    "noEmit": true
+      "@repo/copy": ["packages/copy/index.ts"],
+      "@repo/ui": ["packages/ui/index.ts"]
+    }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.d.ts",
-    "**/.server/**/*.ts",
-    "**/.server/**/*.tsx",
-    "**/.client/**/*.ts",
-    "**/.client/**/*.tsx"
+  "references": [
+    { "path": "./apps/web" },
+    { "path": "./packages/copy" },
+    { "path": "./packages/ui" }
   ]
 }

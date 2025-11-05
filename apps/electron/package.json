@@ -1,0 +1,28 @@
+{
+  "name": "electron",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main/index.ts",
+  "scripts": {
+    "dev": "node ../../scripts/electron-dev.mjs",
+    "build:main": "vite build --config ./main/vite.config.ts",
+    "build:preload": "vite build --config ./preload/vite.config.ts",
+    "build:renderer": "remix vite:build --config ../web/vite-electron.config.ts",
+    "build:deps": "concurrently \"pnpm build:main\" \"pnpm build:preload\" --kill-others-on-fail",
+    "build:unpack": "rm -rf dist && pnpm build:renderer && pnpm build:deps && electron-builder --dir",
+    "build:mac": "rm -rf dist && pnpm build:renderer && pnpm build:deps && electron-builder --mac",
+    "build:win": "rm -rf dist && pnpm build:renderer && pnpm build:deps && electron-builder --win",
+    "build:linux": "rm -rf dist && pnpm build:renderer && pnpm build:deps && electron-builder --linux",
+    "build:dist": "rm -rf dist && pnpm build:renderer && pnpm build:deps && electron-builder --mwl"
+  },
+  "dependencies": {
+    "@repo/copy": "workspace:*",
+    "@repo/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "electron": "^29.1.4",
+    "electron-builder": "^24.13.3",
+    "concurrently": "^8.2.2",
+    "vite": "^5.2.8"
+  }
+}
