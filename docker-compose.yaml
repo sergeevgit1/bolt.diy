@@ -42,7 +42,6 @@ services:
       target: development
     env_file: 
       - '.env'
-      - '.env.local'
     environment:
       - NODE_ENV=development
       - VITE_HMR_PROTOCOL=ws
